@@ -67,21 +67,91 @@ def test_not_db_info(random_user):
     assert random_user.db_info is None
 
 
-def test__check_all():
-    assert False
+def test_check_phone():
+    good_user = User(first_name="Jean",
+                     last_name="Smith",
+                     address="1 rue du chemin, 75015, Paris",
+                     phone_number="0123465789")
+    bad_user = User(first_name="Jean",
+                    last_name="Smith",
+                    address="1 rue du chemin, 75015, Paris",
+                    phone_number="abcd")
+
+    with pytest.raises(ValueError) as error:
+        bad_user._check_phone_number()
+
+    assert error.value.args[0] == "Le nombre 'abcd' est incorrecte."
+
+    assert good_user._check_phone_number()
 
 
-def test__check_names():
-    assert False
+def test_check_names_empty():
+    bad_user = User(first_name="",
+                    last_name="",
+                    address="1 rue du chemin, 75015, Paris",
+                    phone_number="abcd")
+
+    with pytest.raises(ValueError) as error:
+        bad_user._check_names()
+
+    assert error.value.args[0] == "Le prénom et le nom de famille ne doivent pas êtres vides"
 
 
-def test__check_phone_number():
-    assert False
+def test_check_invalid_characters():
+    bad_user = User(first_name="Patrick P34T5P45L££¨¨%µ%",
+                    last_name="claude 8942'(_ç'è",
+                    address="1 rue du chemin, 75015, Paris",
+                    phone_number="abcd")
+
+    with pytest.raises(ValueError) as error:
+        bad_user._check_names()
+
+    assert error.value.args[0] == "Nom invalide 'Patrick P34T5P45L££¨¨%µ% claude 8942'(_ç'è'"
 
 
 def test_delete():
-    assert False
+    first_user = User(first_name="Jean",
+                      last_name="Smith",
+                      address="1 rue du chemin, 75015, Paris",
+                      phone_number="0123456789")
+
+    second_user = User(first_name="Patrick",
+                       last_name="William",
+                       address="1 rue du chemin, 75015, Paris",
+                       phone_number="0123456789")
+
+    third_user = User(first_name="Patrick",
+                      last_name="William",
+                      address="1 rue du chemin, 75015, Paris",
+                      phone_number="0123456789")
+
+    first_user.save()
+    second_user.save()
+    first_user.delete()
+    second_user.delete()
+    assert first_user.db_info is None
+    assert second_user.db_info is None
+
+    with pytest.raises(ValueError) as error:
+        third_user.delete()
+
+    assert error.value.args[0] == "'Patrick William' n'est pas dans la base de donnée"
 
 
 def test_save():
-    assert False
+    first_user = User(first_name="Jean",
+                      last_name="Smith",
+                      address="1 rue du chemin, 75015, Paris",
+                      phone_number="0123456789")
+
+    seond_user = User(first_name="Jean",
+                      last_name="Smith",
+                      address="1 rue du chemin, 75015, Paris",
+                      phone_number="0123456789")
+
+    first_user.save()
+
+    with pytest.raises(OverflowError) as error:
+        seond_user.save()
+
+    assert error.value.args[0] == "L'utilisateur 'Jean Smith' est déjà dans la liste"

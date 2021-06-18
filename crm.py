@@ -31,7 +31,7 @@ class User:
         """
 
     @property
-    def db_info(self):
+    def db_info(self) -> dict:
         User._init_db()
 
         conn = sqlite3.connect(User.DB)
@@ -55,7 +55,7 @@ class User:
         return info
 
     @staticmethod
-    def _init_db():
+    def _init_db() -> bool:
         with OpenSqlite3db(User.DB) as (conn, cursor):
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS people
@@ -69,16 +69,20 @@ class User:
                 )
                 """)
 
-    def _check_all(self):
+        return True
+
+    def _check_all(self) -> bool:
         self._check_phone_number()
         self._check_names()
+        return True
 
-    def _check_phone_number(self):
+    def _check_phone_number(self) -> bool:
         ok_number = re.sub(r"[+()\s]*", "", self.phone_number)
         if len(ok_number) < 10 or not ok_number.isdigit():
             raise ValueError(f"Le nombre '{self.phone_number}' est incorrecte.")
+        return True
 
-    def _check_names(self):
+    def _check_names(self) -> bool:
         if not (self.first_name and self.last_name):
             raise ValueError("Le prénom et le nom de famille ne doivent pas êtres vides")
 
@@ -90,7 +94,9 @@ class User:
         ):
             raise ValueError(f"Nom invalide '{self.full_name}'")
 
-    def delete(self):
+        return True
+
+    def delete(self) -> str:
         all_info = self.db_info
 
         if not all_info:
@@ -107,11 +113,13 @@ class User:
                                "instance_token": all_info.get("token", "")
                            })
 
+        return self.token
+
     def exists(self) -> bool:
         return bool(self.db_info)
 
-    def save(self, validate: bool = False):
-        if validate:
+    def save(self, check_data_valid: bool = False) -> str:
+        if check_data_valid:
             self._check_all()
 
         User._init_db()
@@ -133,6 +141,8 @@ class User:
             VALUES (:first_name, :last_name, :full_name, :phone_number, :address, :token)
             """,
                            self.__dict__)
+
+            return self.token
 
 
 def get_all_users():
