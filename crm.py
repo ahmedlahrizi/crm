@@ -2,8 +2,8 @@ import re
 import sqlite3
 import string
 from pathlib import Path
+from pprint import pprint
 
-import jwt
 from faker import Faker
 from sqlite3cm import OpenSqlite3db
 
@@ -18,7 +18,7 @@ class User:
         self.full_name = f"{self.first_name} {self.last_name}"
         self.phone_number = phone_number
         self.address = address
-        self.token = jwt.encode(self.__dict__, "secret")
+        self._init_db()
 
     def __repr__(self):
         return f"User({self.full_name})"
@@ -30,17 +30,14 @@ class User:
         est son addresse est {self.address}.
         """
 
-    @property
-    def db_info(self) -> dict:
-        User._init_db()
-
+    def db_info(self, throw_error: bool = True):
         conn = sqlite3.connect(User.DB)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("""
         SELECT * FROM people
         WHERE first_name == :instance_first_name
-        AND
+        OR
         last_name == :instance_last_name
         """, {
             "instance_first_name": self.first_name,
@@ -49,10 +46,13 @@ class User:
 
         info = cursor.fetchone()
 
-        if info is not None:
-            info = dict(info)
+        if info is None:
+            if throw_error:
+                raise ValueError(f"L'utilisateur '{self.full_name}' n'est pas dans la base de données")
+            else:
+                return None
 
-        return info
+        return dict(info)
 
     @staticmethod
     def _init_db() -> bool:
@@ -64,8 +64,7 @@ class User:
                     last_name text,
                     full_name text,
                     phone_number text,
-                    address text,
-                    token text
+                    address text
                 )
                 """)
 
@@ -96,58 +95,56 @@ class User:
 
         return True
 
-    def delete(self) -> str:
-        all_info = self.db_info
+    def delete(self) -> int:
+        all_info = self.db_info()
 
         if not all_info:
             raise ValueError(f"'{self.full_name}' n'est pas dans la base de donnée")
 
-        User._init_db()
-
         with OpenSqlite3db(User.DB) as (conn, cursor):
             cursor.execute("""
                 DELETE FROM people
-                WHERE token = :instance_token
+                WHERE ROWID == :instance_number
                 """,
                            {
-                               "instance_token": all_info.get("token", "")
+                               "instance_number": self.number
                            })
 
-        return self.token
+        return self.number
 
     def exists(self) -> bool:
-        return bool(self.db_info)
+        return bool(self.db_info())
 
-    def save(self, check_data_valid: bool = False) -> str:
+    def save(self, check_data_valid: bool = False) -> int:
         if check_data_valid:
             self._check_all()
 
-        User._init_db()
+        if self.db_info(False) is not None:
+            raise OverflowError(f"L'utilisateur '{self.full_name}' est déjà dans la liste")
 
         with OpenSqlite3db(User.DB) as (conn, cursor):
             cursor.execute("""
-            SELECT token FROM people
-            WHERE token == :instance_token
-            """,
-                           {
-                               "instance_token": self.token
-                           })
-
-            if cursor.fetchone() is not None:
-                raise OverflowError(f"L'utilisateur '{self.full_name}' est déjà dans la liste")
-
-            cursor.execute("""
             INSERT INTO people 
-            VALUES (:first_name, :last_name, :full_name, :phone_number, :address, :token)
+            VALUES (:first_name, :last_name, :full_name, :phone_number, :address)
             """,
                            self.__dict__)
 
-            return self.token
+            cursor.execute("""
+            SELECT ROWID
+            FROM people
+            WHERE (
+            first_name = :first_name,
+            last_name = :last_name
+            )
+            """,
+                           self.__dict__)
+
+            self.number = cursor.fetchone()[0]
+
+        return self.number
 
 
 def get_all_users():
-    User._init_db()
-
     with OpenSqlite3db(User.DB) as (conn, cursor):
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
@@ -161,16 +158,16 @@ def get_all_users():
 
 if __name__ == "__main__":
     fake_data = Faker(locale="fr_FR")
-    # for _ in range(10):
-    #     user_preset = {
-    #         "first_name": fake_data.unique.first_name(),
-    #         "last_name": fake_data.unique.last_name(),
-    #         "phone_number": fake_data.unique.phone_number(),
-    #         "address": fake_data.unique.address(),
-    #     }
-    #     pprint((user := User(**user_preset)))
-    #     user.save()
-    #     print('-' * 100)
+    for _ in range(10):
+        user_preset = {
+            "first_name": "patrick",
+            "last_name": "patrick",
+            "phone_number": "patrick",
+            "address": "patrick",
+        }
+        pprint((user := User(**user_preset)))
+        user.save()
+        print('-' * 100)
     # pprint(get_all_users())
-    laure = User("Laure", "Bourgeois")
-    print(laure.exists())
+    # laure = User("Laure", "Bourgeois")
+    # print(laure.exists())
