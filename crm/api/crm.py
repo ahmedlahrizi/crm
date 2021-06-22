@@ -10,7 +10,7 @@ from sqlite3cm import OpenSqlite3db
 
 
 class User:
-    DB = Path(__file__).parent.resolve() / "database.db"
+    DB = Path(__file__).parent.parent.resolve() / "db.sqlite3"
 
     def __init__(self, first_name: str, last_name: str, phone_number: str = "", address: str = "",
                  **trash_args):
@@ -166,13 +166,13 @@ if __name__ == "__main__":
     # fake_data = Faker(locale="fr_FR")
     # for _ in range(10):
     #     user_preset = {
-    #         "first_name": "patrick",
-    #         "last_name": "patrick",
-    #         "phone_number": "patrick",
-    #         "address": "patrick",
+    #         "first_name": fake_data.unique.first_name(),
+    #         "last_name": fake_data.unique.last_name(),
+    #         "phone_number": fake_data.unique.phone_number(),
+    #         "address": fake_data.unique.address(),
     #     }
-    #     pprint((user := User(**user_preset)))
-    # user.save()
+    #     print((user := User(**user_preset)))
+    #     user.save()
     # user.delete()
     # print('-' * 100)
     # pprint(get_all_users())

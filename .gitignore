@@ -3,3 +3,4 @@
 UserGenerator/
 venv/
 __pycache__/
+crm/api/test_database.db/

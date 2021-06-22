@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,
+          user-scalable=no,
+          initial-scale=1.0,
+          maximum-scale=1.0,
+          minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Index des contacts</title>
+</head>
+<body>
+
+    <h1>Hello les contacts</h1>
+
+
+    {% for user in users %}
+        <div class="user">
+            <h1>{{ user.full_name }}</h1>
+            <h2>{{ user.address }}</h2>
+            <h3>{{ user.phone_number }}</h3>
+
+
+            <form method="post" action="{% url 'add-contact' %}">
+                {% csrf_token %}
+                <label for="first_name">Prénom</label>
+                <input id="first_name" name="first_name" placeholder="Patrick" type="text">
+                <label for="last_name">Nom</label>
+                <input id="last_name" name="last_name" placeholder="Smith" type="text">
+                <label for="age">Age</label>
+                <input id="age" name="age" placeholder="21" type="text">
+                <label for="address">adress</label>
+                <textarea id="address" name="address" placeholder="Rue des champs Elysées, Paris France" rows="3"></textarea>
+                <label for="phone_number">Numéro de telephone</label>
+                <input id="phone_number" name="phone_number" placeholder="06 50 65 64 46" type="text">
+                <button type="submit">Ajouter</button>
+            </form>
+        </div>
+    {% endfor %}
+
+
+</body>
+</html>
